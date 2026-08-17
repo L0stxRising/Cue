@@ -1,0 +1,14 @@
+onnxruntime>=1.16.0
+transformers<5.0.0
+pillow>=10.0.0
+torch
+torchvision
+torchaudio
+pyautogui
+mss
+torchao >= 0.6.0
+einops
+timm
+python-dotenv
+tqdm
+evdev; sys_platform == 'linux'
