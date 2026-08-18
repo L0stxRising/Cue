@@ -9,7 +9,7 @@ VENV_PYTHON = str(BASE / "Env" / ("Scripts" if sys.platform == "win32" else "bin
 if not os.path.exists(VENV_PYTHON):
     VENV_PYTHON = sys.executable
 
-# idk some Random Colors i chose 
+# idk some Random Colors I chose 
 C = "\033[36m"
 B = "\033[34m"
 M = "\033[35m"
@@ -19,7 +19,7 @@ W = "\033[1;37m"
 D = "\033[2m"
 N = "\033[0m"
 
-
+# Fricking Linux Hacks
 def get_safe_env():
     env = os.environ.copy()
     if sys.platform.startswith("linux"):
