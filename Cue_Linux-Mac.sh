@@ -28,6 +28,9 @@ if [ ! -f "$PY" ]; then
     exit 1
 fi
 
+mkdir -p "$DIR/tmp"
+mkdir -p "$DIR/Output"
+
 get_saved_key() {
     if [ -f "$ENV_FILE" ]; then
         grep "OPENROUTER_API_KEY=" "$ENV_FILE" | cut -d '=' -f2-
