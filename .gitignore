@@ -14,7 +14,3 @@ Output/
 .vscode/
 .idea/
 
-# ─── PyInstaller ──────────────────────────
-build/
-dist/
-*.spec
