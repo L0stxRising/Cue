@@ -34,7 +34,7 @@ if not "!CUR_KEY!"=="" (
     for /f %%S in ('"%PY%" "%DIR%test_api_key.py" "!CUR_KEY!" 2^>nul') do set "STATUS=%%S"
 )
 
-if not "!STATUS!"=="VALID" (
+if not "!STATUS:~0,5!"=="VALID" (
     echo.
     echo ====================================
     echo   OpenRouter API Key Required/Invalid
@@ -47,7 +47,7 @@ if not "!STATUS!"=="VALID" (
     set "STATUS="
     for /f %%S in ('"%PY%" "%DIR%test_api_key.py" "!API_KEY!" 2^>nul') do set "STATUS=%%S"
 
-    if "!STATUS!"=="VALID" (
+    if "!STATUS:~0,5!"=="VALID" (
         echo # CUE Configuration - Auto-generated> "%ENV_FILE%"
         echo # DO NOT share this file or commit it to version control!>> "%ENV_FILE%"
         echo OPENROUTER_API_KEY=!API_KEY!>> "%ENV_FILE%"
