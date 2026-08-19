@@ -51,7 +51,7 @@ fi
 
 while [ "$STATUS" != "VALID" ]; do
     echo -e "${M}┌──────────────────────────────────────┐${N}"
-    echo -e "${M}│${W}   OpenRouter API Key Required/Invalid ${M}│${N}"
+    echo -e "${M}│${W} OpenRouter API Key Required/Invalid${M}  │${N}"
     echo -e "${M}└──────────────────────────────────────┘${N}"
     read -rp $'\033[33m⟩ \033[0mPaste your API key: ' API_KEY
     echo -e "${D}Validating...${N}"

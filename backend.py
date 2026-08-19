@@ -174,7 +174,7 @@ You are a Senior Technical Writer. Convert the provided raw UI interaction logs 
 ---
 > **Note:** [Optional short callout for warnings or non-obvious behavior derived from logs. Omit if unnecessary.]
 
-{"### USER INSTRUCTIONS:" + USER_NOTES if USER_NOTES.strip() else ""}
+{"### USER INSTRUCTIONS:" + USER_NOTES if USER_NOTES else ""}
 
 ### INPUT DATA:
 **Raw Logs:** 

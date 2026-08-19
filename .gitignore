@@ -3,6 +3,7 @@
 
 # ─── Python ───────────────────────────────
 Env/
+Env-Windows/
 __pycache__/
 *.pyc
 

@@ -4,3 +4,4 @@ mss
 Pillow
 python-dotenv
 tqdm
+requests

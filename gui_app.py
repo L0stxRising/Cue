@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import scrolledtext
 import os
 import subprocess, threading, pathlib, glob
-import requests
 import sys
+
 BASE = pathlib.Path(__file__).resolve().parent
 TMP = BASE / "tmp"
 PY = str(BASE / "Env" / ("Scripts" if sys.platform == "win32" else "bin") / "python")
@@ -28,7 +28,7 @@ class CueApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Cue — Screenshot Guide Maker")
-        self.geometry("620x520")
+        self.geometry("620x600")
         self.configure(bg=BG)
         self.resizable(False, False)
         self.process = None
@@ -52,10 +52,22 @@ class CueApp(tk.Tk):
         self.title_entry = tk.Entry(tf, width=30, font=F(), bg=ENT, fg=FG,
                                      insertbackground=FG, relief="flat", bd=4)
         self.title_entry.grid(row=0, column=1, padx=4)
-        self.gen_btn = btn(tf, "⚡ Generate", ACT, self.generate_guide, "disabled", 12)
-        self.gen_btn.grid(row=0, column=2, padx=6)
 
-        self.log = scrolledtext.ScrolledText(self, width=72, height=14, bg="#0d1117",
+        nf = tk.Frame(self, bg=BG); nf.pack(pady=(0, 6))
+        lbl(nf, txt="Notes for AI:").grid(row=0, column=0, padx=4)
+        self.notes_entry = tk.Entry(nf, width=40, font=F(), bg=ENT, fg=FG,
+                                     insertbackground=FG, relief="flat", bd=4)
+        self.notes_entry.grid(row=0, column=1, padx=4)
+
+        of = tk.Frame(self, bg=BG); of.pack(pady=(0, 6))
+        self.img_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(of, text="Embed screenshots in guide", variable=self.img_var,
+                        font=F(9), bg=BG, fg=FG, selectcolor=BG,
+                        activebackground=BG, activeforeground=FG).pack(side="left", padx=4)
+        self.gen_btn = btn(of, "⚡ Generate", ACT, self.generate_guide, "disabled", 12)
+        self.gen_btn.pack(side="left", padx=10)
+
+        self.log = scrolledtext.ScrolledText(self, width=72, height=13, bg="#0d1117",
                                               fg="#c9d1d9", font=("Courier", 9),
                                               relief="flat", bd=6, insertbackground=FG)
         self.log.pack(padx=14, pady=(6, 14))
@@ -115,6 +127,8 @@ class CueApp(tk.Tk):
         def run():
             env = os.environ.copy()
             env["CUE_GUIDE_TITLE"] = title
+            env["CUE_USER_NOTES"] = self.notes_entry.get().strip()
+            env["CUE_IMAGE_MODE"] = "Yes" if self.img_var.get() else "No"
             proc = self._spawn("backend.py", env)
             for line in proc.stdout:
                 self.after(0, self.log_msg, line.rstrip())

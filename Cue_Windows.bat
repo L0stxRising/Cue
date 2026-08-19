@@ -1,5 +1,5 @@
 @echo off
-@REM Launches for Widnows!
+@REM Launches for Windows!
 setlocal enabledelayedexpansion
 set "DIR=%~dp0"
 set "VENV=%DIR%Env"
@@ -12,6 +12,15 @@ if not exist "%VENV%" if exist "%DIR%Env.zip" (
     powershell -NoProfile -Command "Expand-Archive -Path '%DIR%Env.zip' -DestinationPath '%DIR%' -Force"
     echo [Setup] Done.
 )
+
+if not exist "%PY%" (
+    echo [Error] Python not found at %PY%. Check Env.zip contents.
+    pause
+    exit /b 1
+)
+
+if not exist "%DIR%tmp" mkdir "%DIR%tmp"
+if not exist "%DIR%Output" mkdir "%DIR%Output"
 
 REM ── API Key validation loop ──
 :validate_loop
@@ -30,17 +39,18 @@ if not "!STATUS!"=="VALID" (
     echo ====================================
     echo   OpenRouter API Key Required/Invalid
     echo ====================================
+    set "API_KEY="
     set /p API_KEY="Paste your OpenRouter API key: "
+    if "!API_KEY!"=="" goto validate_loop
+
     echo Validating...
     set "STATUS="
     for /f %%S in ('"%PY%" "%DIR%test_api_key.py" "!API_KEY!" 2^>nul') do set "STATUS=%%S"
 
     if "!STATUS!"=="VALID" (
-        (
-            echo # CUE Configuration — Auto-generated
-            echo # DO NOT share this file or commit it to version control!
-            echo OPENROUTER_API_KEY=!API_KEY!
-        ) > "%ENV_FILE%"
+        echo # CUE Configuration - Auto-generated> "%ENV_FILE%"
+        echo # DO NOT share this file or commit it to version control!>> "%ENV_FILE%"
+        echo OPENROUTER_API_KEY=!API_KEY!>> "%ENV_FILE%"
         echo [OK] API key validated and saved.
     ) else (
         echo [Error] Key rejected ^(!STATUS!^). Try again.
@@ -48,7 +58,7 @@ if not "!STATUS!"=="VALID" (
     )
 )
 
-REM ── Mode Selection ──
+
 echo.
 echo ====================================
 echo         Select Mode
