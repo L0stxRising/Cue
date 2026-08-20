@@ -2,19 +2,19 @@
 @REM Launches for Windows!
 setlocal enabledelayedexpansion
 set "DIR=%~dp0"
-set "VENV=%DIR%Env"
+set "VENV=%DIR%Env-Windows"
 set "PY=%VENV%\Scripts\python.exe"
 set "ENV_FILE=%DIR%.env"
 
 REM ── Extract bundled venv if needed ──
-if not exist "%VENV%" if exist "%DIR%Env.zip" (
+if not exist "%VENV%" if exist "%DIR%Env-Windows.zip" (
     echo [Setup] Extracting environment...
-    powershell -NoProfile -Command "Expand-Archive -Path '%DIR%Env.zip' -DestinationPath '%DIR%' -Force"
+    powershell -NoProfile -Command "Expand-Archive -Path '%DIR%Env-Windows.zip' -DestinationPath '%DIR%' -Force"
     echo [Setup] Done.
 )
 
 if not exist "%PY%" (
-    echo [Error] Python not found at %PY%. Check Env.zip contents.
+    echo [Error] Python not found at %PY%. Check Env-Windows.zip contents.
     pause
     exit /b 1
 )
