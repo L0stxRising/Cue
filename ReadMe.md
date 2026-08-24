@@ -28,4 +28,5 @@ gh repo clone L0stxRising/Cue
 
 
 [IMP NOTE] : For MAC Os you need to Grant the Script Permissions to Record Mouse and Screen.
+
 [IMP NOTE] : Everything Is Done by the script You Don't Need to Run it With Admin/Root
