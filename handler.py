@@ -48,16 +48,11 @@ def run_cli():
     subprocess.call([VENV_PYTHON, str(BASE / "app.py")], cwd=str(BASE), env=run_env)
 
     print(f"\n{G}✓{N}  Recording complete!\n")
-   
-    # Prompt for Guide Title
+    
     title = input(f"{Y}⟩{N} Give a Title to your Guide: ").strip() or "Untitled Guide"
     run_env["CUE_GUIDE_TITLE"] = title
-
-    # Prompt for Custom User Notes
     user_notes = input(f"{Y}⟩{N} Enter custom instructions for AI (press Enter to skip): ").strip()
     run_env["CUE_USER_NOTES"] = user_notes
-
-    # Prompt for Image Embedding Mode
     img_choice = input(f"{Y}⟩{N} Embed screenshots in the Markdown guide? [y/N]: ").strip().lower()
     run_env["CUE_IMAGE_MODE"] = "Yes" if img_choice in ["y", "yes", "true", "1"] else "No"
 

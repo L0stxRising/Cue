@@ -12,7 +12,7 @@ def main():
 
     req = urllib.request.Request("https://openrouter.ai/api/v1/auth/key")
     req.add_header("Authorization", f"Bearer {key}")
-    req.add_header("User-Agent", "Mozilla/5.0")  # <--- ADDED THIS LINE
+    req.add_header("User-Agent", "Mozilla/5.0")  # Idk Why not havin this line breaks
     try:
         resp = urllib.request.urlopen(req, timeout=10)
         json.loads(resp.read().decode("utf-8"))

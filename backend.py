@@ -63,22 +63,38 @@ MODEL_LIST=[
 "google/gemma-4-26b-a4b-it:free",
 "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
 ]
-prompt_text = ("""
-URGENT VISUAL DIRECTIVE: Look strictly at the location of the MOUSE CURSOR or RED CIRCLE/BOX in this screenshot. Ignore the rest of the page.
+prompt_text = """
+You are analyzing ONE screenshot. A click location is marked in ONE of two ways:
 
-Analyze the specific UI element being hovered, highlighted, or clicked. If it's a text input, assume the user is pressing Enter.
+TYPE A — A synthetic marker: a perfectly round, solid, flat-colored RED DOT/CIRCLE drawn on top of the image. It has no text, no icon, no gradient — just a plain circle. This is NOT part of the real app UI.
 
-Reply EXACTLY in this plain text key-value format. Do not use Markdown, JSON, or introductory sentences.
+TYPE B — A normal OS mouse cursor (small arrow/pointer icon), if no red dot exists.
 
-Application: [App/Website Name or 'Unidentified']
-Platform/Environment: [Web / Desktop / Mobile]
-Interaction Marker: [Mouse Cursor / Red Box / None]
-Target Element Type: [Button / Text Field / Sidebar / Tab / Icon]
-Exact Element Text: "[Exact text on the element, or '[Icon: name]' if none]"
-Element Location: [Top-right, Left sidebar, Center, etc.]
-Action: [What clicking/entering this does]
-Raw Step Summary: [A single sentence summary, e.g., "User clicks the 'Save' button in the settings menu."]
-""")
+STEP 1 — FIND THE MARKER:
+- Scan for the plain red circle first. Do NOT confuse it with real red UI elements (buttons, error badges, notification dots, icons) — those usually have text, shading, or shape details. The synthetic marker is a flat, uniform circle only.
+- If no such flat red circle exists anywhere, locate the normal mouse cursor arrow instead.
+- If neither is visible, say so (see fallback below).
+
+STEP 2 — IDENTIFY THE ELEMENT AT THE MARKER:
+Look ONLY at the UI element directly under or touching the marker. Ignore all other parts of the screenshot.
+
+STEP 3 — INTERPRET:
+If the element is a text input, assume the user typed relevant text and pressed Enter.
+
+Respond in EXACTLY this plain-text format. No markdown, no JSON, no extra sentences:
+
+Application: <App/website name, or "Unidentified">
+Marker Found: <Red Dot / Mouse Cursor / None>
+Element Type: <Button / Text Field / Link / Icon / Tab / Menu Item / Checkbox / Other>
+Element Text: <exact visible label/text, or "[Icon: short description]" if no text>
+Element Location: <e.g. Top-left, Center, Bottom navbar>
+Likely Action: <short phrase — what happens when this is used>
+Step Summary: <one sentence, e.g. "User clicks the Save button in the top toolbar.">
+
+If you cannot confidently find a marker or element, respond with only:
+Element Type: Unclear
+Step Summary: Unable to determine the action from this screenshot.
+"""
 def ContactAI(prompt_text,img,ModelList):
     MODEL_IDX=0
     for _ in range(5):
@@ -139,20 +155,24 @@ with open(GUIDE_PATH,"r") as G:
 
 COMPILE_MODEL=["nvidia/nemotron-3-ultra-550b-a55b:free"]
 prompt_text = f"""
-You are a Senior Technical Writer. Convert the provided raw UI interaction logs into a concise, meticulously formatted Markdown User Guide.
+You are a Senior Technical Writer. Convert the raw UI-interaction logs below into a concise, well-formatted Markdown user guide.
+
+### INPUT FORMAT NOTE:
+Each raw log entry is one interaction with fields like Application, Marker Found, Element Type, Element Text, Element Location, Likely Action, Step Summary. Some entries may be marked "Unclear" (extraction failed) or "Unidentified" (app not recognized) — these come from an imperfect vision model. Treat them charitably: infer the likely intent from surrounding steps and context, but NEVER fabricate specific UI text/labels that weren't given. If a step is genuinely unusable, merge it silently into the previous or next step rather than leaving a broken/empty step in the guide.
 
 ### CORE RULES & FORMATTING:
-1. **Pristine Markdown:** Emphasize clean structure, spacing, and readability. ALWAYS **bold** exact UI elements (e.g., click **Settings**).
-2. **Smart Compression:** Assume basic user competency. Group micro-steps into single logical actions (e.g., instead of "click search, type query, hit enter," use "Search for [Query]"). Include obvious missing precursors (e.g., "Navigate to Website X").
-3. **Ruthless Conciseness:** Write in direct, professional imperative tone. Zero conversational filler. Keep spatial directions minimal unless necessary.
-4. **Strict Accuracy:** Use the exact spelling and capitalization of UI elements provided in the logs. Do not invent unperformed actions.
-5. **Image Placement:** The user's image preference is: "{Image_Mode}". If opted in, append pointers like `|Image 1|` at the end of the corresponding step (matching the raw data interaction number).
+1. **Pristine Markdown:** Clean structure and spacing. ALWAYS **bold** exact UI element text (e.g., click **Settings**), using the exact spelling/capitalization from "Element Text" — never invent or paraphrase UI labels.
+2. **Smart Compression:** Merge consecutive micro-steps into one logical action if they're part of the same operation (e.g., clicking a search box + typing + pressing Enter becomes "Search for [X]"). Add an obvious missing precursor step if needed (e.g., "Navigate to [App]") based on the first entry's Application field.
+3. **Continuity over literalism:** If an entry is "Unclear," do not create a step for it — infer from the previous and next confirmed steps whether it was a transition, and omit or merge instead of guessing wildly.
+4. **Ruthless Conciseness:** Direct, professional, imperative tone. No filler, no meta-commentary about the source logs.
+5. **Strict Accuracy:** Only use element names/text explicitly present in the logs.
+6. **Image Placement:** User's image preference is "{Image_Mode}". If enabled, append `|Image N|` at the end of a step, where N is the ORIGINAL "Interaction N" number from the logs it was derived from (use the first number if multiple were merged).
 
 ### REQUIRED OUTPUT SCHEMA:
 
 # {GUIDE_TITLE}
 
-**Application:** [App Name] | **Platform:** [Platform/OS]  
+**Application:** [App Name] | **Platform:** [Platform/OS]
 **Objective:** [1-sentence summary of the task]
 
 ---
@@ -165,19 +185,19 @@ You are a Senior Technical Writer. Convert the provided raw UI interaction logs 
 
 ### Step-by-Step Instructions
 
-1. **[Action Headline]**  
-   [Single, direct instruction combining related micro-actions. e.g., "In the left sidebar, click **Settings**."] |Image X| *(if applicable)*
+1. **[Action Headline]**
+   [Direct instruction combining related micro-actions.] |Image X| *(if applicable)*
 
-2. **[Action Headline]**  
-   [Next logical instruction...]
+2. **[Action Headline]**
+   [Next instruction...]
 
 ---
-> **Note:** [Optional short callout for warnings or non-obvious behavior derived from logs. Omit if unnecessary.]
+> **Note:** [Optional callout for warnings/non-obvious behavior. Omit section if not needed.]
 
 {"### USER INSTRUCTIONS:" + USER_NOTES if USER_NOTES else ""}
 
 ### INPUT DATA:
-**Raw Logs:** 
+**Raw Logs:**
 {raw_steps}
 """
 
