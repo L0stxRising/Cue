@@ -21,7 +21,7 @@ try:
 except ImportError:
     pwd = None
 
-    
+
 state = {
     "M_CLICK": False,
     "CTRL_PRESSED": False,
@@ -43,6 +43,7 @@ if os.path.exists(TMP_PATH):
 
 def get_mouse_devices():
     if not HAS_EVDEV:
+        print("[Warning] evdev is not available.")
         return [], []
         
     devices = [InputDevice(path) for path in list_devices()]
@@ -59,9 +60,7 @@ def get_mouse_devices():
             elif ecodes.KEY_A in capabilities[ecodes.EV_KEY]:
                 kboard.append(device)
     return mice, kboard
-import PIL
 
-print("Something Is wrong THe time is not FKIng working")
 if HAS_PYNPUT:
     def on_press(key):
         global state
@@ -89,6 +88,7 @@ if HAS_PYNPUT:
         global state
         if button == pynput_mouse.Button.left:
             state["M_CLICK"] = pressed
+# ------------------------------------------------------------------------
 
 async def ListenM(mouse):
     try:
@@ -160,6 +160,7 @@ def take_screenshot(output_path="screenshot.png"):
             run_env["XDG_RUNTIME_DIR"] = f"/run/user/{uid}"
             run_env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
             run_env["WAYLAND_DISPLAY"] = wayland_display
+            
             cmd_prefix = ["sudo", "-u", real_user, "env", 
                 f"XDG_RUNTIME_DIR=/run/user/{uid}", 
                 f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus",
@@ -178,16 +179,16 @@ def take_screenshot(output_path="screenshot.png"):
                 mkCMD=cmd_prefix+["mkdir", TMP_PATH]
                 subprocess.run(mkCMD,env=run_env, check=True)
             subprocess.run(cmd, env=run_env, check=True)
-            print(f"screenshot saved -> {abs_path}")
+            print(f"[Success] Wayland screenshot saved -> {abs_path}")
 
         except subprocess.CalledProcessError as e:
-            print(f"screenshot failed: {e}")
+            print(f"[Error] Wayland screenshot failed: {e}")
             return False
     else:
         try:
             import mss
             from PIL import Image, ImageDraw
-
+            
             with mss.mss() as sct:
                 monitor = sct.monitors[0]
                 sct_img = sct.grab(monitor)
@@ -204,9 +205,9 @@ def take_screenshot(output_path="screenshot.png"):
                     outline="white"
                 )
                 img.save(abs_path)
-            print(f"screenshot saved -> {abs_path}")
+            print(f"[Success] Standard screenshot saved -> {abs_path}")
         except ImportError:
-            print("Something Went Wrong")
+            print("[Error] Missing libraries! Run: pip install mss Pillow pynput")
             return False
 
     if is_root and os.path.exists(abs_path) and pwd:
@@ -225,13 +226,13 @@ async def main():
     m_listener = None
     k_listener = None
     if mice and kboard:
-        print("Started Listening For Activation")
+        print("Started Listening For Activation (Linux)")
         for device in mice:
             listener_tasks.append(asyncio.create_task(ListenM(device)))
         for device in kboard:
             listener_tasks.append(asyncio.create_task(ListenK(device)))
     elif HAS_PYNPUT:
-        print("Started Listening For Activation")
+        print("Started Listening For Activation (Windows/Mac/Xorg)")
         m_listener = pynput_mouse.Listener(on_click=on_click)
         k_listener = pynput_keyboard.Listener(on_press=on_press, on_release=on_release)
         m_listener.start()
