@@ -21,12 +21,14 @@ I got tired of writing "click here, then click here, then type this" guides by h
 
 You'll need an [OpenRouter](https://openrouter.ai) API key (This script uses the free Models so this can run for free).
 
-1) Just Download the ZIP file of the Entire Project Or Clone it:
-gh repo clone L0stxRising/Cue
+1) Just Download the Suitable File from https://github.com/L0stxRising/Cue/releases/tag/Cue_V1
 
-2) Run the Startup Script for Whichever OS you use (they are Named For OS)
+2) Run the Script anywhere (Most Preferably a Folder)
 
 
 [IMP NOTE] : For MAC Os you need to Grant the Script Permissions to Record Mouse and Screen => Go to Settings -> privacy and Security -> Accessibility and Toggle switch ON for Terminal. Also Go to Settings -> privacy and Security -> Screen Recording and Do the Same.
 
+[IMP NOTE] : Sometimes Due to High Demand, the Models Might Fail So Try again In a Moment.
+
 [IMP NOTE] : Everything Is Done by the script You Don't Need to Run it With Admin/Root
+
