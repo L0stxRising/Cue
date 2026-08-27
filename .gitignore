@@ -15,3 +15,6 @@ Output/
 .vscode/
 .idea/
 
+# ─── PyInstaller ──────────────────────────
+dist/
+build_tmp/

@@ -4,10 +4,14 @@ import os
 import subprocess, threading, pathlib, glob
 import sys
 
-BASE = pathlib.Path(__file__).resolve().parent
+if getattr(sys, "frozen", False):
+    BASE = pathlib.Path(sys.executable).resolve().parent
+else:
+    BASE = pathlib.Path(__file__).resolve().parent
 TMP = BASE / "tmp"
 PY = str(BASE / "Env" / ("Scripts" if sys.platform == "win32" else "bin") / "python")
 if not os.path.exists(PY): PY = sys.executable
+FROZEN = getattr(sys, "frozen", False)
 
 BG, FG, BTN, ACT, ENT, OK = "#1a1a2e", "#e0e0e0", "#16213e", "#533483", "#0f3460", "#00d2ff"
 F = lambda s=10, b=False: ("Helvetica", s, "bold") if b else ("Helvetica", s)
@@ -85,6 +89,12 @@ class CueApp(tk.Tk):
         self.count_var.set(f"Screenshots: {len(glob.glob(str(TMP / '*.png')))}")
 
     def _spawn(self, script, env=None):
+        if FROZEN:
+            exe = sys.executable
+            flag = "--capture" if "app" in script else "--generate"
+            return subprocess.Popen([exe, flag], cwd=str(BASE),
+                                     env=env or os.environ.copy(), stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT, text=True)
         return subprocess.Popen([PY, "-u", str(BASE / script)], cwd=str(BASE),
                                  env=env or os.environ.copy(), stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT, text=True)

@@ -34,7 +34,6 @@ if getattr(sys, "frozen", False):
 else:
     BASE_PATH=Path(__file__).resolve().parent
 TMP_PATH=os.path.join(BASE_PATH,"tmp")
-os.makedirs(TMP_PATH, exist_ok=True)
 if os.path.exists(TMP_PATH):
     for filename in os.listdir(TMP_PATH):
         file_path = os.path.join(TMP_PATH, filename)
