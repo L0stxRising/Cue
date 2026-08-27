@@ -15,10 +15,10 @@ import urllib.request
 import urllib.error
 import json
 import base64
-import tqdm.auto as tqdm
 import shutil
 import concurrent
 import re
+import time
 
 
 def ContactAI(prompt_text, img, ModelList, api_key):
@@ -44,26 +44,47 @@ def ContactAI(prompt_text, img, ModelList, api_key):
         req.add_header('X-title', 'UI_Analyzer_Script')
         
         try:
-            response=urllib.request.urlopen(req)
-            result = json.loads(response.read().decode('utf-8'))
-            if 'error' in result:
-                print(f"API Error from {ModelList[MODEL_IDX]}: {result['error'].get('message', 'Unknown Error')}")
+            response = urllib.request.urlopen(req)
+            raw_body = response.read().decode('utf-8')
+            
+            if not raw_body:
+                print(f"Empty response from {ModelList[MODEL_IDX]}")
                 MODEL_IDX += 1
                 continue
-            if "Unclear" in result['choices'][0]['message']['content']:
+                
+            result = json.loads(raw_body)
+            
+            if not result or 'error' in result:
+                err_msg = result.get('error', {}).get('message', 'Unknown Error') if isinstance(result, dict) else 'Invalid JSON'
+                print(f"API Error from {ModelList[MODEL_IDX]}: {err_msg}")
+                MODEL_IDX += 1
+                continue
+            message_choice = result.get('choices', [{}])[0].get('message', {})
+            content = message_choice.get('content') if message_choice else None
+            
+            if content is None:
+                print(f"Model {ModelList[MODEL_IDX]} returned null content, retrying...")
+                MODEL_IDX += 1
+                continue
+
+            if "Unclear" in content:
                 print("Model Unable to Extract Data, Trying Again")
                 if Last_UNCLEAR:
-                    return result['choices'][0]['message']['content']
-                Last_UNCLEAR=True
+                    return content
+                Last_UNCLEAR = True
                 continue
-            return result['choices'][0]['message']['content']
+                
+            return content
+
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
             print(f'Model {ModelList[MODEL_IDX]} failed with HTTP {e.code}: {error_body}')
             MODEL_IDX += 1
+            time.sleep(1)
         except Exception as e:
             print(f'Connecting Failed with Error {e}')
-            MODEL_IDX+=1
+            MODEL_IDX += 1
+            time.sleep(1)
     else:
         return None
 def main():
