@@ -1,7 +1,3 @@
-"""
-Cue — Single entry point for PyInstaller packaging.
-Dispatches to capture (app.py), generate (backend.py), or GUI (gui_app.py).
-"""
 import sys
 import os
 import pathlib
@@ -26,16 +22,11 @@ except PermissionError:
     print(f"[Error] Permission denied when trying to create folder at {TARGET_FOLDER}.")
     print("Make sure the executable is placed in a directory where the user has write permissions (e.g., Desktop or Documents, NOT Program Files).")
 
-
-# ── Privilege escalation (Linux only) ─────────────────────────────────
-# Global input capture via evdev requires root on Wayland.
-# Re-launch via pkexec with display env vars forwarded.
 def _needs_escalation():
     if sys.platform != "linux":
         return False
     if os.geteuid() == 0:
         return False
-    # Only escalate for the main GUI / capture, not --generate
     if "--generate" in sys.argv:
         return False
     return True
@@ -47,7 +38,6 @@ def _escalate():
         return False
     exe = sys.executable if not getattr(sys, "frozen", False) else sys.argv[0]
     exe = os.path.abspath(exe)
-    # Forward display environment variables so the GUI & screenshots work under root
     env_vars = []
     for key in ("DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR",
                 "XAUTHORITY", "XDG_CURRENT_DESKTOP", "DBUS_SESSION_BUS_ADDRESS",
@@ -60,10 +50,8 @@ def _escalate():
     cmd = [pkexec, "env"] + env_vars + [exe] + sys.argv[1:]
     os.execvp(pkexec, cmd)
 
-# ── API key check ─────────────────────────────────────────────────────
 def _ensure_api_key():
     dotenv_path = BASE / ".env"
-    # Try loading existing .env
     try:
         from dotenv import load_dotenv
         load_dotenv(dotenv_path)
@@ -72,7 +60,6 @@ def _ensure_api_key():
     key = os.environ.get("OPENROUTER_API_KEY", "").strip()
     if key:
         return
-    # Show tkinter dialog for API key
     try:
         import tkinter as tk
         from tkinter import simpledialog, messagebox
@@ -94,7 +81,6 @@ def _ensure_api_key():
         print(f"Could not show API key dialog: {e}")
         sys.exit(1)
 
-# ── Dispatch ──────────────────────────────────────────────────────────
 if __name__ == "__main__":
     if _needs_escalation():
         _escalate()

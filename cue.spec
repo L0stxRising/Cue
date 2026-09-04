@@ -1,11 +1,6 @@
-# -*- mode: python ; coding: utf-8 -*-
-# Cue — PyInstaller spec file (single-file)
-# Build with:  pyinstaller cue.spec
-
 import sys
 from PyInstaller.utils.hooks import collect_submodules
 
-# Collect all pynput backends (they're loaded dynamically)
 pynput_hidden = collect_submodules('pynput')
 
 hidden = pynput_hidden + [
@@ -40,6 +35,6 @@ exe = EXE(
     debug=False,
     strip=False,
     upx=True,
-    console=True,  # Keep console for subprocess stdout piping
+    console=True,
     onefile=True,
 )
