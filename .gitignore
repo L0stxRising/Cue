@@ -1,20 +1,15 @@
-# ─── Secrets ──────────────────────────────
 .env
 
-# ─── Python ───────────────────────────────
 Env/
 Env-Windows/
 __pycache__/
 *.pyc
 
-# ─── Temp Data ────────────────────────────
 tmp/
 Output/
 
-# ─── IDE ──────────────────────────────────
 .vscode/
 .idea/
 
-# ─── PyInstaller ──────────────────────────
 dist/
 build_tmp/

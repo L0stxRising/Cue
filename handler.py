@@ -4,12 +4,12 @@ import os
 import pathlib
 
 BASE = pathlib.Path(__file__).resolve().parent
+
 VENV_PYTHON = str(BASE / "Env" / ("Scripts" if sys.platform == "win32" else "bin") / "python")
 
 if not os.path.exists(VENV_PYTHON):
     VENV_PYTHON = sys.executable
 
-# Colors
 C = "\033[36m"
 B = "\033[34m"
 M = "\033[35m"
@@ -19,7 +19,7 @@ W = "\033[1;37m"
 D = "\033[2m"
 N = "\033[0m"
 
-# Environment preparation
+
 def get_safe_env():
     env = os.environ.copy()
     if sys.platform.startswith("linux"):
@@ -35,13 +35,13 @@ def get_safe_env():
 
 
 def run_cli():
-    """CLI mode: run app.py then backend.py in the terminal."""
     print(f"{B}┌──────────────────────────────────────┐{N}")
     print(f"{B}│{N}  {C}CTRL + Click {N} → Capture screenshot  {B}│{N}")
     print(f"{B}│{N}  {C}CTRL + Enter {N} → Capture screenshot  {B}│{N}")
     print(f"{B}│{N}  {C}CTRL + Delete{N} → Del Last Screenshot {B}│{N}")
     print(f"{B}│{N}  {M}CTRL + Esc{N} → {Y}Done Recording{N}        {B} │{N}")
     print(f"{B}└──────────────────────────────────────┘{N}")
+
     run_env = get_safe_env()
 
     print(f"\n{G}⏺{N}  {W}Phase 1{N} — Starting screenshot capture...\n")
@@ -49,17 +49,19 @@ def run_cli():
 
     print(f"\n{G}✓{N}  Recording complete!\n")
    
-    # Prompt for Guide Title
-    title = input(f"{Y}⟩{N} Give a Title to your Guide: ").strip() or "Untitled Guide"
+    title = input(f"{Y}⟩{N} Give a Title to your Guide: ").strip()
+    if title == "":
+        title = "Untitled Guide"
     run_env["CUE_GUIDE_TITLE"] = title
 
-    # Prompt for Custom User Notes
     user_notes = input(f"{Y}⟩{N} Enter custom instructions for AI (press Enter to skip): ").strip()
     run_env["CUE_USER_NOTES"] = user_notes
 
-    # Prompt for Image Embedding Mode
     img_choice = input(f"{Y}⟩{N} Embed screenshots in the Markdown guide? [y/N]: ").strip().lower()
-    run_env["CUE_IMAGE_MODE"] = "Yes" if img_choice in ["y", "yes", "true", "1"] else "No"
+    if img_choice in ["y", "yes", "true", "1"]:
+        run_env["CUE_IMAGE_MODE"] = "Yes"
+    else:
+        run_env["CUE_IMAGE_MODE"] = "No"
 
     print(f"\n{M}⚡{N} {W}Phase 2{N} — Generating guide from screenshots...\n")
     subprocess.call([VENV_PYTHON, str(BASE / "backend.py")], cwd=str(BASE), env=run_env)
@@ -68,7 +70,7 @@ def run_cli():
 
 def run_gui():
     run_env = get_safe_env()
-    subprocess.call([VENV_PYTHON, str(BASE / "gui_app.py")], cwd=str(BASE), env=run_env)
+    subprocess.call([VENV_PYTHON,  str(BASE / "gui_app.py")], cwd=str(BASE), env=run_env)
 
 
 if __name__ == "__main__":
