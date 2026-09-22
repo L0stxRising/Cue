@@ -3,6 +3,7 @@ import os
 import pathlib
 import subprocess
 import shutil
+# import time
 
 if getattr(sys, "frozen", False) == True:
     BASE = pathlib.Path(sys.executable).resolve().parent
@@ -10,22 +11,28 @@ else:
     BASE = pathlib.Path(__file__).resolve().parent
 
 
-TARGET_FOLDER = BASE / "tmp"
-OUTPUT_FOLDER = BASE / "Output"
+tf = BASE / "tmp"
+of = BASE / "Output"
 
 try:
-    TARGET_FOLDER.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
-    print(f"Folder ready at: {TARGET_FOLDER}")
-    print(f"Folder ready at: {OUTPUT_FOLDER}")
+    tf.mkdir(parents=True, exist_ok=True)
+    of.mkdir(parents=True, exist_ok=True)
+    
+    print(f"Folder ready at: {tf}")
+    print(f"Folder ready at: {of}")
 except PermissionError:
-    print(f"[Error] Permission denied when trying to create folder at {TARGET_FOLDER}.")
-    print("Make sure the executable is placed in a directory where the user has write permissions (e.g., Desktop or Documents, NOT Program Files).")
+    print(f"Permission denied when trying to create folder at {tf}.")
+    
+    print("Make sure the the user has write permissions.")
 
+
+# def check_root():
+#     return os.geteuid() == 0
 
 def _needs_escalation():
     if sys.platform != "linux":
         return False
+    
     if os.geteuid() == 0:
         return False
     if "--generate" in sys.argv:
@@ -33,62 +40,65 @@ def _needs_escalation():
     return True
 
 def _escalate():
-    pkexec = shutil.which("pkexec")
-    if pkexec is None:
-        print("[Warning] pkexec not found — running without root. Global hotkeys may not work on Wayland.")
+    pk = shutil.which("pkexec")
+    if pk is None:
         return False
 
     if getattr(sys,  "frozen",  False) == True:
-        exe = sys.argv[0]
+        ex = sys.argv[0]
     else:
-        exe = sys.executable
-    exe = os.path.abspath(exe)
+        ex = sys.executable
+    ex = os.path.abspath(ex)
 
-    env_vars = []
-    for key in ("DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR",
+    ev = []
+    for k in ("DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR",
                 "XAUTHORITY", "XDG_CURRENT_DESKTOP", "DBUS_SESSION_BUS_ADDRESS",
                 "HOME",  "LANG"):
-        val = os.environ.get(key)
-        if val:
-            env_vars.append(f"{key}={val}")
+        v = os.environ.get(k)
+        if v:
+            ev.append(f"{k}={v}")
 
-    user = os.environ.get("USER", "")
-    env_vars.append(f"SUDO_USER={user}")
+    u = os.environ.get("USER", "")
+    ev.append(f"SUDO_USER={u}")
 
-    cmd = [pkexec, "env"] + env_vars + [exe] + sys.argv[1:]
-    os.execvp(pkexec,  cmd)
+    # cmd = [pk, "env"] + ev + [ex, "--gui"]
+    cmd = [pk, "env"] + ev + [ex] + sys.argv[1:]
+    os.execvp(pk,  cmd)
 
 def _ensure_api_key():
-    dotenv_path = BASE / ".env"
+    dp = BASE / ".env"
 
     try:
         from dotenv import load_dotenv
-        load_dotenv(dotenv_path)
+        load_dotenv(dp)
     except ImportError:
         pass
 
-    key = os.environ.get("OPENROUTER_API_KEY",  "").strip()
-    if len(key) > 0:
+    k = os.environ.get("OPENROUTER_API_KEY",  "").strip()
+    if len(k) > 0:
         return
 
     try:
         import tkinter as tk
         from tkinter import simpledialog,  messagebox
-        root = tk.Tk()
-        root.withdraw()
-        key = simpledialog.askstring("Cue — API Key Required",
+        rt = tk.Tk()
+        rt.withdraw()
+        k = simpledialog.askstring("Cue — API Key Required",
                                      "Enter your OpenRouter API key:",
-                                     parent=root)
-        root.destroy()
-        if not key or key.strip() == "":
+                                     parent=rt)
+        
+        rt.destroy()
+        if not k or k.strip() == "":
             print("No API key provided. Exiting.")
             sys.exit(1)
-        key = key.strip()
-        os.environ["OPENROUTER_API_KEY"] = key
-        f = open(dotenv_path,  "w")
-        f.write(f"OPENROUTER_API_KEY={key}\n")
+        k = k.strip()
+        os.environ["OPENROUTER_API_KEY"] = k
+
+        # print("Api key checked!!!")
+        f = open(dp,  "w")
+        f.write(f"OPENROUTER_API_KEY={k}\n")
         f.close()
-        print(f"API key saved to {dotenv_path}")
+        print(f"API key saved to {dp}")
     except Exception as e:
         print(f"Could not show API key dialog: {e}")
         sys.exit(1)
@@ -97,16 +107,19 @@ def _ensure_api_key():
 if __name__ == "__main__":
     if _needs_escalation():
         _escalate()
-
+    # else:
+    #     None
     _ensure_api_key()
 
     if "--capture" in sys.argv:
         from app import main as capture_main
         import asyncio
+        
         try:
             asyncio.run(capture_main())
         except KeyboardInterrupt:
             pass
+        
     elif "--generate" in sys.argv:
         from backend import main as generate_main
         generate_main()

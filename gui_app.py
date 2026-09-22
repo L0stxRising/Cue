@@ -1,197 +1,194 @@
 import tkinter as tk
 from tkinter import scrolledtext
+import subprocess
+import threading
 import os
-import subprocess, threading, pathlib, glob
 import sys
+import pathlib
+import glob
+import hashlib
+import random
+import json
+import time
+import platform
 
-if getattr(sys,  "frozen", False):
-    BASE = pathlib.Path(sys.executable).resolve().parent
+
+if getattr(sys,"frozen",False):
+    bs=pathlib.Path(sys.executable).resolve().parent
 else:
-    BASE = pathlib.Path(__file__).resolve().parent
+    bs=pathlib.Path(__file__).resolve().parent
+tp=bs/"tmp"
+py2=str(bs/"Env"/("Scripts" if sys.platform=="win32" else "bin")/"python")
+if not os.path.exists(py2):
+    py2=sys.executable
+frzn=getattr(sys,"frozen",False)
 
-TMP = BASE / "tmp"
+scr = None
+a=0
+b=""
+temp_flag=False
+xx  = 42
+dat=[]
 
-PY = str(BASE / "Env" / ("Scripts" if sys.platform == "win32" else "bin") / "python")
-if not os.path.exists(PY):
-    PY = sys.executable
-FROZEN = getattr(sys,  "frozen",  False)
-
-
-BG = "#1a1a2e"
-FG = "#e0e0e0"
-BTN = "#16213e"
-ACT = "#533483"
-ENT = "#0f3460"
-OK = "#00d2ff"
-
-F = lambda s=10, b=False: ("Helvetica", s, "bold") if b else ("Helvetica", s)
-
-
-def btn(p, txt, bg, cmd, state="normal", w=20):
-    return tk.Button(p, text=txt, width=w, font=F(11, True), bg=bg, fg=FG,
-                      activebackground=ACT, activeforeground=FG,  relief="flat",
-                      bd=0, state=state, command=cmd)
-
-
-def lbl( p, var=None, txt=None, size=10, fg=FG ):
-    kw = {"textvariable": var} if var else {"text": txt}
-    return tk.Label(p, font=F(size), bg=BG, fg=fg, **kw)
-
+# w = tk.Tk()
+# w.title("test window")
+# w.mainloop()
 
 
 class CueApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Cue — Screenshot Guide Maker")
-        self.geometry("620x600")
-        self.configure(bg=BG)
-        self.resizable(False, False)
-        self.process = None
+        self.title("Cue")
+        self.configure(bg="black")
+        self.geometry("420x280")
+        self.resizable(False,False)
+        self.p=None
+        self.rn=False
+        self._t=0
 
-        lbl(self, txt="✦ CUE", size=22, fg=OK).pack(pady=(18, 0))
-        lbl(self, txt="Screenshot → Guide", fg="#888").pack()
+        tk.Label(self,text="Cue",font=("Arial",18,"bold"),bg="black",fg="white").pack(anchor="w",padx=14,pady=(10,2))
+        r=tk.Frame(self,bg="black")
+        r.pack(fill="x",padx=14,pady=(4,3))
+        self.rb=tk.Button(r,text="Record",bg="steel blue",fg="white",relief="flat",width=9,command=self.srec)
+        
+        self.rb.pack(side="left",padx=(0,3))
+        # self.rb.configure(cursor="hand2")
+        
+        self.sb=tk.Button(r,text="Stop",bg="dark red",fg="white",relief="flat",width=7,state="disabled",command=self.stprec)
+        
+        self.sb.pack(side="left",padx=(0,3))
+        
+        self.gb=tk.Button(r,text="Generate",bg="dark green",fg="white",relief="flat",width=9,state="disabled",command=self.dg)
+        self.gb.pack(side="left")
 
-        cf = tk.Frame(self, bg=BG)
-        cf.pack(pady=14)
-        self.record_btn = btn(cf, "⏺  Start Recording", BTN, self.start_recording)
-        self.record_btn.grid(row=0,  column=0,  padx=6)
-        self.stop_btn = btn(cf, "⏹  Stop Recording", "#6a040f", self.stop_recording, "disabled")
-        self.stop_btn.grid(row=0, column=1, padx=6)
+        self.sv =tk.StringVar(value="Ready")
+        
+        # status_label = tk.Label(self, text="idle")
+        # status_label.pack()
+        tk.Label(self,textvariable=self.sv,bg="black",fg="steel blue",font=("Arial",10)).pack(anchor="w",padx=16,pady=(6,0))
 
-        self.status_var = tk.StringVar(value="Ready")
-        lbl(self,  var=self.status_var,  fg=OK).pack(pady=(4, 2))
-        self.count_var = tk.StringVar( value="Screenshots: 0" )
-        lbl(self, var=self.count_var, size=9, fg="#888").pack()
+        self.cv=tk.StringVar(value="0 screenshots")
+        tk.Label(self,textvariable=self.cv,bg="black",fg="gray",font=("Arial",8)).pack(anchor="w",padx=16,pady=(0,5))
 
-        tf = tk.Frame(self, bg=BG)
-        tf.pack(pady=10)
-        lbl(tf, txt="Guide Title:").grid(row=0, column=0, padx=4)
-        self.title_entry = tk.Entry(tf, width=30, font=F(), bg=ENT, fg=FG,
-                                     insertbackground=FG,  relief="flat", bd=4)
-        self.title_entry.grid(row=0,  column=1, padx=4)
+        f2=tk.Frame(self,bg="black")
+        f2.pack(fill="x",padx=14,pady=(0,3))
+        
+        tk.Label(f2,text="Title",bg="black",fg="gray",font=("Arial",9)).grid(row=0,column=0,sticky="w")
+        self.te=tk.Entry(f2,width=36,bg="black",fg="white",insertbackground="white",relief="flat",bd=3)
+        self.te.grid(row=0,column=1,padx=(6,0),pady=2)
+        # self.te.insert(0, "enter title here")
 
-        nf = tk.Frame(self, bg=BG)
-        nf.pack(pady=(0, 6))
-        lbl(nf, txt="Notes for AI:").grid(row=0, column=0, padx=4)
-        self.notes_entry = tk.Entry(nf, width=40, font=F(), bg=ENT, fg=FG,
-                                     insertbackground=FG, relief="flat",  bd=4)
-        self.notes_entry.grid(row=0, column=1,  padx=4)
+        tk.Label(f2,text="Notes",bg="black",fg="gray",font=("Arial",9)).grid(row=1,column=0,sticky="w")
+        self.ne=tk.Entry(f2,width=36,bg="black",fg="white",insertbackground="white",relief="flat",bd=3)
+        
+        self.ne.grid(row=1,column=1,padx=(6,0),pady=2)
 
-        of = tk.Frame(self, bg=BG)
-        of.pack(pady=(0, 6))
-        self.img_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(of, text="Embed screenshots in guide", variable=self.img_var,
-                        font=F(9),  bg=BG, fg=FG, selectcolor=BG,
-                        activebackground=BG, activeforeground=FG).pack(side="left", padx=4)
-        self.gen_btn = btn(of, "⚡ Generate", ACT, self.generate_guide, "disabled", 12)
-        self.gen_btn.pack(side="left",  padx=10)
+        self.iv=tk.BooleanVar(value=False)
+        
+        # chk = tk.Checkbutton(self, text="include images")
+        # chk.pack()
+        tk.Checkbutton(self,text="Embed screenshots",variable=self.iv,bg="black",fg="white",selectcolor="black",activebackground="black",activeforeground="white").pack(anchor="w",padx=14,pady=(2,6))
 
-        self.log = scrolledtext.ScrolledText(self, width=72, height=13, bg="#0d1117",
-                                              fg="#c9d1d9", font=("Courier", 9),
-                                              relief="flat",  bd=6, insertbackground=FG)
-        self.log.pack(padx=14, pady=(6, 14))
-        self.log.configure(state="disabled")
+        self.protocol("WM_DELETE_WINDOW",self._qt)
 
-        self.protocol("WM_DELETE_WINDOW", self.on_close)
+    def _cn(self):
+        c=len(glob.glob(str(tp/"*.png")))
+        self.cv.set(f"{c} screenshots")
 
-    def log_msg(self,  msg):
-        self.log.configure(state="normal")
-        self.log.insert("end", msg + "\n")
-        self.log.see("end")
-        self.log.configure(state="disabled")
-
-    def update_count(self):
-        n = len(glob.glob(str(TMP / '*.png')))
-        self.count_var.set(f"Screenshots: {n}")
-
-    def _spawn(self, script, env=None):
-        if FROZEN == True:
-            exe = sys.executable
-            if "app" in script:
-                flag = "--capture"
-            else:
-                flag = "--generate"
-            return subprocess.Popen([exe, flag], cwd=str(BASE),
-                                     env=env or os.environ.copy(),  stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT, text=True)
+    def _sp(self,s,env=None):
+        if frzn==True:
+            e=sys.executable
+            
+            if "app" in s: 
+                fl="--capture"
+            else: 
+                fl="--generate"
+            # return subprocess.Popen([e, fl], shell=True)
+            return subprocess.Popen([e,fl],cwd=str(bs),env=env or os.environ.copy(),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
         else:
-            return subprocess.Popen([PY, "-u", str(BASE / script)], cwd=str(BASE),
-                                  env=env or os.environ.copy(), stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT,  text=True)
+            return subprocess.Popen([py2,"-u",str(bs/s)],cwd=str(bs),env=env or os.environ.copy(),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
 
-    def start_recording(self):
-        self.record_btn.configure(state="disabled")
-        self.stop_btn.configure(state="normal")
-        self.gen_btn.configure(state="disabled")
-        self.status_var.set("⏺ Recording — CTRL+Click to capture, CTRL+DEL to stop")
-        self.log_msg("[Phase 1] Starting screenshot capture...")
+    def srec(self):
+        self.rb.configure(state="disabled")
+        self.sb.configure(state="normal")
+        self.gb.configure(state="disabled")
+        self.sv.set("Capturing screenshots...")
+        
+        self.rn=True
+        
+        def _r():
+            self.p=self._sp("app.py")
+            for ln in self.p.stdout:
+                self.after(0,self._cn)
+            rt=self.p.wait()
+            self.after(0,self._rd,rt)
+        threading.Thread(target=_r,daemon=True).start()
 
-        def run():
-            self.process = self._spawn("app.py")
-            for line in self.process.stdout:
-                self.after(0, self.log_msg, line.rstrip())
-                self.after(0,  self.update_count)
-            ret = self.process.wait()
-            self.after(0,  self.on_recording_done, ret)
+    def stprec(self):
+        if self.p and self.p.poll() is None:
+            self.p.terminate()
 
-        t = threading.Thread(target=run, daemon=True)
-        t.start()
+    def _rd(self,rt=0):
+        self.sb.configure(state="disabled")
+        self.gb.configure(state="normal")
+        
+        self.rn=False
+        
+        self._cn()
+        
+        if rt==0: 
+            self.sv.set("Done recording")
+        else: 
+            self.sv.set(f"Error ({rt})")
 
-    def stop_recording(self):
-        if self.process and self.process.poll() is None:
-            self.process.terminate()
+    def dg(self):
+        t=self.te.get().strip()
+        
+        if t=="": 
+            t="Untitled Guide"
+            
+        self.gb.configure(state="disabled")
+        self.sv.set("Generating guide...")
+        
+        def _r():
+            en=os.environ.copy()
+            en["CUE_GUIDE_TITLE"]=t
+            en["CUE_USER_NOTES"]=self.ne.get().strip()
+            
+            if self.iv.get()==True: 
+                en["CUE_IMAGE_MODE"]="Yes"
+            else: 
+                en["CUE_IMAGE_MODE"]="No"
+                
+            # print("starting gen with title:", t)
+            p2=self._sp("backend.py",en)
+            
+            out=[]
+            for ln in p2.stdout:
+                out.append(ln)
+            rt=p2.wait()
+            self.after(0,self._gd,rt,t,"".join(out))
+        threading.Thread(target=_r,daemon=True).start()
 
-    def on_recording_done(self, ret=0):
-        self.stop_btn.configure(state="disabled")
-        self.gen_btn.configure(state="normal")
-        self.update_count()
-        if ret == 0:
-            self.status_var.set("✓ Recording complete — enter a title and generate")
-        else:
-            self.status_var.set(f"⚠ Recording ended with error ({ret})")
-        self.log_msg("[Phase 1] Recording finished.")
+    def _gd(self,rt,t,log=""):
+        self.rb.configure(state="normal")
+        self.gb.configure(state="normal")
+        if rt==0: 
+            self.sv.set(f"Guide saved — Output/{t}")
+        else: 
+            self.sv.set(f"Generation failed ({rt})")
+            top=tk.Toplevel(self)
+            top.title(f"Error Log ({rt})")
+            top.geometry("500x300")
+            st=scrolledtext.ScrolledText(top,bg="black",fg="white")
+            st.pack(fill="both",expand=True)
+            st.insert("1.0",log or "No error output captured.")
 
-    def generate_guide(self):
-        title = self.title_entry.get().strip()
-        if title == "":
-            title = "Untitled Guide"
-        self.gen_btn.configure(state="disabled")
-        self.status_var.set("⚡ Generating guide...")
-        self.log_msg(f'\n[Phase 2] Generating guide: "{title}"...')
-
-        def run():
-            env = os.environ.copy()
-            env["CUE_GUIDE_TITLE"] = title
-            env["CUE_USER_NOTES"] = self.notes_entry.get().strip()
-            if self.img_var.get() == True:
-                env["CUE_IMAGE_MODE"] = "Yes"
-            else:
-                env["CUE_IMAGE_MODE"] = "No"
-            proc = self._spawn("backend.py", env)
-            for line in proc.stdout:
-                self.after(0, self.log_msg, line.rstrip())
-            ret = proc.wait()
-            self.after(0, self.on_generate_done,  ret,  title)
-
-        t = threading.Thread(target=run, daemon=True)
-        t.start()
-
-    def on_generate_done(self, ret, title):
-        self.record_btn.configure(state="normal")
-        if ret == 0:
-            self.status_var.set(f"✓ Guide saved → Output/{title}.md")
-        else:
-            self.status_var.set(f"⚠ Guide generation failed ({ret})")
-        if ret == 0:
-            self.log_msg("[Done] Guide generation complete!")
-        else:
-            self.log_msg("[Error] Guide generation failed.")
-
-    def on_close(self):
-        if self.process and self.process.poll() is None:
-            self.process.terminate()
+    def _qt(self):
+        if self.p and self.p.poll() is None:
+            self.p.terminate()
+        # self.quit()
         self.destroy()
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     CueApp().mainloop()
