@@ -5,10 +5,7 @@ import subprocess
 import shutil
 # import time
 
-if getattr(sys, "frozen", False) == True:
-    BASE = pathlib.Path(sys.executable).resolve().parent
-else:
-    BASE = pathlib.Path(__file__).resolve().parent
+BASE = pathlib.Path(__file__).resolve().parent
 
 
 tf = BASE / "tmp"

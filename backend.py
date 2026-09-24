@@ -1,17 +1,6 @@
 import os
 import sys
 import pathlib
-try:
-    from dotenv import load_dotenv
-    
-    if getattr(sys,"frozen",False):
-        dp2=pathlib.Path(sys.executable).resolve().parent/".env"
-        
-    else:
-        dp2=pathlib.Path(__file__).resolve().parent/".env"
-    load_dotenv(dp2)
-except ImportError:
-    pass
 import json
 import base64
 import glob

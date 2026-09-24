@@ -7,6 +7,7 @@ import glob
 from pathlib import Path
 import hashlib
 import random
+
 try:
     from evdev import InputDevice,list_devices,ecodes
     hev=True
