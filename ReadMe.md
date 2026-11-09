@@ -2,6 +2,9 @@
 
 Cue Turns what you just did on your screen into a written guide. No editing, no screenshotting manually, no writing steps by hand.
 
+![Cue UI](ui.png)
+
+
 ## How it Works
 So Basically You start a Script, You DO Whatever You want to Record, For Each Step Click CTRL+CLICK or CTRL+ENTER => Whichever Is Suitable, Once You are done, Press CTRL+ESC , then Fill in the Info Regarding the Guide Like the Title, Some Notes etc.
 
@@ -23,3 +26,8 @@ You'll need an [OpenRouter](https://openrouter.ai) API key (This script uses the
 
 [IMP NOTE] : Everything Is Done by the script You Don't Need to Run it With Admin/Root
 
+## AI Usage :
+I Used AI to Help me in the Screenshotting Script (wayland Permissions), and generating System Prompts for AI models.
+
+## Made By:
+L0stSky ;)
