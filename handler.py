@@ -3,29 +3,31 @@ import sys
 import os
 import pathlib
 
-b=pathlib.Path(__file__).resolve().parent
+base_dir = pathlib.Path(__file__).resolve().parent
 
-vp=str(b/"Env"/("Scripts" if sys.platform=="win32" else "bin")/"python")
+if sys.platform == "win32":
+    python_bin = str(base_dir / "Env" / "Scripts" / "python.exe")
+else:
+    python_bin = str(base_dir / "Env" / "bin" / "python")
+if not os.path.exists(python_bin):
+    python_bin = sys.executable
 
 
-if not os.path.exists(vp):
-    vp=sys.executable
+def setup_env():
+    env = os.environ.copy()
 
-def gse():
-    e=os.environ.copy()
     if sys.platform.startswith("linux"):
-        if "DISPLAY" not in e:
-            e["DISPLAY"]=":0"
-            
-        # if "WAYLAND_DISPLAY" not in e:
-        #     e["WAYLAND_DISPLAY"] = "wayland-0"
-        if "XAUTHORITY" not in e:
-            ru=e.get("SUDO_USER") or e.get("USER")
-            if ru and ru!="root":
-                e["XAUTHORITY"]=f"/home/{ru}/.Xauthority"
+        if "DISPLAY" not in env:
+            env["DISPLAY"] = ":0"
+        if "XAUTHORITY" not in env:
+            user = env.get("SUDO_USER") or env.get("USER")
+            if user and user != "root":
+                env["XAUTHORITY"] = f"/home/{user}/.Xauthority"
             else:
-                e["XAUTHORITY"]=os.path.expanduser("~/.Xauthority")
-    return e
+                env["XAUTHORITY"] = os.path.expanduser("~/.Xauthority")
+
+    return env
+
 
 def run_cli():
     print("Controls:")
@@ -33,44 +35,44 @@ def run_cli():
     print("  CTRL + Enter  - Capture screenshot")
     print("  CTRL + Delete - Del Last Screenshot")
     print("  CTRL + Esc    - Done Recording")
-
-    # print("press any key to start")
-
-    re=gse()
+    env = setup_env()
     print("\nPhase 1 - Starting screenshot capture...\n")
-    subprocess.call([vp,str(b/"app.py")],cwd=str(b),env=re)
-    
+
+    subprocess.call([python_bin, str(base_dir / "app.py")], cwd=str(base_dir), env=env)
+
     print("\nRecording complete!\n")
-    
-    t=input("Give a Title to your Guide: ").strip()
-    if t=="":
-        t="Untitled Guide"
-    re["CUE_GUIDE_TITLE"]=t
 
-    # notes=input("any notes? ")
-    un=input("Enter custom instructions for AI (press Enter to skip): ").strip()
-    re["CUE_USER_NOTES"]=un
+    title = input("Give a Title to your Guide: ").strip()
+    if not title:
+        title = "Untitled Guide"
+    env["CUE_GUIDE_TITLE"] = title
 
-    ic=input("Embed screenshots in the Markdown guide? [y/N]: ").strip().lower()
-    
-    if ic in ["y","yes","true","1"]:
-        re["CUE_IMAGE_MODE"]="Yes"
+    # notes = input("any notes? ")
+    notes = input("Enter custom instructions for AI (press Enter to skip): ").strip()
+    env["CUE_USER_NOTES"] = notes
+
+    choice = input("Embed screenshots in the Markdown guide? [y/N]: ").strip().lower()
+    if choice in ["y", "yes", "true", "1"]:
+        env["CUE_IMAGE_MODE"] = "Yes"
     else:
-        re["CUE_IMAGE_MODE"]="No"
-    # re["CUE_IMAGE_MODE"] = "Yes"
-    
+        env["CUE_IMAGE_MODE"] = "No"
     print("\nPhase 2 - Generating guide from screenshots...\n")
-    subprocess.call([vp,str(b/"backend.py")],cwd=str(b),env=re)
-    print(f"\nDone! Your guide is at Output/{t}/{t}.md\n")
+    subprocess.call([python_bin, str(base_dir / "backend.py")], cwd=str(base_dir), env=env)
+
+    print(f"\nDone! Your guide is at Output/{title}/{title}.md\n")
+
 
 def run_gui():
-    re=gse()
-    # subprocess.call([vp, str(b/"main.py")], cwd=str(b), env=re)
-    subprocess.call([vp,str(b/"gui_app.py")],cwd=str(b),env=re)
+    env = setup_env()
+    subprocess.call([python_bin, str(base_dir / "gui_app.py")], cwd=str(base_dir), env=env)
 
-if __name__=="__main__":
-    md=sys.argv[1] if len(sys.argv)>1 else "cli"
-    if md=="gui":
+
+if __name__ == "__main__":
+    mode = "cli"
+    if len(sys.argv) > 1:
+        mode = sys.argv[1].strip()
+
+    if mode == "gui":
         run_gui()
     else:
         run_cli()

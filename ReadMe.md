@@ -8,15 +8,6 @@ So Basically You start a Script, You DO Whatever You want to Record, For Each St
 ## Why
 I got tired of writing "click here, then click here, then type this" guides by hand every time someone asked me how to do something. Cue Automates this Boring process of the Making Guides.
 
-## Controls
-
-| Shortcut | What it does |
-|---|---|
-| `Ctrl + Click` | Take a screenshot |
-| `Ctrl + Enter` | Take a screenshot (When Its Better like Idk filling a form maybe) |
-| `Ctrl + Delete`| Delete the last screenshot you took (oops! wrong click) |
-| `Ctrl + Esc`   | Stop recording, and pack up |
-
 ## Setup
 
 You'll need an [OpenRouter](https://openrouter.ai) API key (This script uses the free Models so this can run for free).
